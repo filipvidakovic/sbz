@@ -1,0 +1,203 @@
+package com.lol.recommender.rules;
+
+import com.lol.recommender.model.Fact;
+import com.lol.recommender.model.Strategy;
+
+// ============================================================
+//  NIVO 2: STRATEGIJE
+//  Forward chaining: Fact → Strategy
+// ============================================================
+
+// ── TANK / FRONTLINE ─────────────────────────────────────────
+
+rule "Need tank – enemy has assassin"
+    salience 80
+    when
+        Fact(name == "enemyHasAssassin")
+        Fact(name == "allyNeedsTank")
+        not Strategy(name == "pickTank")
+    then
+        insert(new Strategy("pickTank"));
+end
+
+rule "Need tank – enemy mostly AD"
+    salience 80
+    when
+        Fact(name == "enemyMostlyAD")
+        Fact(name == "allyNeedsTank")
+        not Strategy(name == "pickTank")
+    then
+        insert(new Strategy("pickTank"));
+end
+
+rule "Need tank – enemy dive comp"
+    salience 85
+    when
+        Fact(name == "enemyIsDiveComposition")
+        Fact(name == "allyNeedsTank")
+        not Strategy(name == "pickTank")
+    then
+        insert(new Strategy("pickTank"));
+end
+
+// ── ENGAGE ────────────────────────────────────────────────────
+
+rule "Need engage – ally lacks engage"
+    salience 80
+    when
+        Fact(name == "allyLacksEngage")
+        not Strategy(name == "pickEngage")
+    then
+        insert(new Strategy("pickEngage"));
+end
+
+rule "Need frontline engage – critical gap"
+    salience 85
+    when
+        Fact(name == "allyNeedsFrontlineEngage")
+        not Strategy(name == "pickFrontlineEngage")
+    then
+        insert(new Strategy("pickFrontlineEngage"));
+end
+
+rule "Counter heavy engage – disengage"
+    salience 82
+    when
+        Fact(name == "enemyHasHeavyEngage")
+        not Strategy(name == "pickDisengage")
+    then
+        insert(new Strategy("pickDisengage"));
+end
+
+// ── MAGE / AP ─────────────────────────────────────────────────
+
+rule "Need AP – ally lacks AP"
+    salience 80
+    when
+        Fact(name == "allyNeedsAP")
+        not Strategy(name == "pickMage")
+    then
+        insert(new Strategy("pickMage"));
+end
+
+rule "Need AP – team too AD heavy"
+    salience 80
+    when
+        Fact(name == "allyHasTooMuchAD")
+        not Strategy(name == "pickMage")
+    then
+        insert(new Strategy("pickMage"));
+end
+
+rule "Need AP poke – enemy is passive"
+    salience 78
+    when
+        Fact(name == "allyNeedsAP")
+        Fact(name == "enemyHasNoTank")
+        not Strategy(name == "pickPokeMage")
+    then
+        insert(new Strategy("pickPokeMage"));
+end
+
+// ── SUPPORT ───────────────────────────────────────────────────
+
+rule "Need support"
+    salience 80
+    when
+        Fact(name == "allyNeedsSupport")
+        not Strategy(name == "pickSupport")
+    then
+        insert(new Strategy("pickSupport"));
+end
+
+rule "Need peel support – enemy has burst"
+    salience 85
+    when
+        Fact(name == "allyNeedsSupport")
+        Fact(name == "enemyIsFullBurst")
+        not Strategy(name == "pickPeelSupport")
+    then
+        insert(new Strategy("pickPeelSupport"));
+end
+
+rule "Need engage support – ally lacks engage"
+    salience 83
+    when
+        Fact(name == "allyNeedsSupport")
+        Fact(name == "allyLacksEngage")
+        not Strategy(name == "pickEngageSupport")
+    then
+        insert(new Strategy("pickEngageSupport"));
+end
+
+// ── ASSASSIN / BURST ──────────────────────────────────────────
+
+rule "Pick assassin – enemy is squishy"
+    salience 80
+    when
+        Fact(name == "enemyIsSquishy")
+        not Strategy(name == "pickAssassin")
+    then
+        insert(new Strategy("pickAssassin"));
+end
+
+// ── KONTRA POKE ───────────────────────────────────────────────
+
+rule "Counter poke – dive or engage"
+    salience 80
+    when
+        Fact(name == "enemyIsPokeHeavy")
+        not Strategy(name == "counterPoke")
+    then
+        insert(new Strategy("counterPoke"));
+end
+
+rule "Counter poke with engage – force fights"
+    salience 82
+    when
+        Fact(name == "enemyHasPokeAndEngage")
+        not Strategy(name == "hardEngageVsPoke")
+    then
+        insert(new Strategy("hardEngageVsPoke"));
+end
+
+// ── OTPORNOST (RESISTANCES) ───────────────────────────────────
+
+rule "Build armor – enemy mostly AD"
+    salience 80
+    when
+        Fact(name == "enemyMostlyAD")
+        not Strategy(name == "buildArmor")
+    then
+        insert(new Strategy("buildArmor"));
+end
+
+rule "Build magic resist – enemy mostly AP"
+    salience 80
+    when
+        Fact(name == "enemyMostlyAP")
+        not Strategy(name == "buildMagicResist")
+    then
+        insert(new Strategy("buildMagicResist"));
+end
+
+rule "Build mixed resistances – balanced enemy"
+    salience 78
+    when
+        Fact(name == "enemyBalancedDamage")
+        not Strategy(name == "buildMixedResistances")
+    then
+        insert(new Strategy("buildMixedResistances"));
+end
+
+// ── UTILITY ───────────────────────────────────────────────────
+
+rule "Need utility – team lacks CC and mobility"
+    salience 75
+    when
+        Fact(name == "allyLacksUtility")
+        Fact(name == "allyIsAllAssassins")
+        not Strategy(name == "pickUtility")
+    then
+        insert(new Strategy("pickUtility"));
+end

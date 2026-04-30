@@ -1,0 +1,290 @@
+package com.lol.recommender.rules;
+
+import com.lol.recommender.model.Champion;
+import com.lol.recommender.model.Champion.Role;
+import com.lol.recommender.model.Champion.DamageType;
+import com.lol.recommender.model.Champion.PlayStyle;
+import com.lol.recommender.model.Fact;
+
+// ============================================================
+//  NIVO 1: ČINJENICE
+// ============================================================
+
+// ── TIP ŠTETE ────────────────────────────────────────────────
+
+rule "Enemy mostly AD"
+    salience 100
+    when
+        accumulate(
+            Champion(team == "enemy", damageType == DamageType.AD),
+            $count : count(1)
+        )
+        eval($count >= 3)
+        not Fact(name == "enemyMostlyAD")
+    then
+        insert(new Fact("enemyMostlyAD"));
+end
+
+rule "Enemy mostly AP"
+    salience 100
+    when
+        accumulate(
+            Champion(team == "enemy", damageType == DamageType.AP),
+            $count : count(1)
+        )
+        eval($count >= 3)
+        not Fact(name == "enemyMostlyAP")
+    then
+        insert(new Fact("enemyMostlyAP"));
+end
+
+rule "Enemy balanced damage"
+    salience 100
+    when
+        accumulate(
+            Champion(team == "enemy", damageType == DamageType.AD),
+            $ad : count(1)
+        )
+        accumulate(
+            Champion(team == "enemy", damageType == DamageType.AP),
+            $ap : count(1)
+        )
+        eval($ad >= 1 && $ap >= 1 && $ad < 3 && $ap < 3)
+        not Fact(name == "enemyBalancedDamage")
+    then
+        insert(new Fact("enemyBalancedDamage"));
+end
+
+// ── ULOGE NEPRIJATELJA ────────────────────────────────────────
+
+rule "Enemy has assassin"
+    salience 100
+    when
+        Champion(team == "enemy", role == Role.ASSASSIN)
+        not Fact(name == "enemyHasAssassin")
+    then
+        insert(new Fact("enemyHasAssassin"));
+end
+
+rule "Enemy has multiple assassins"
+    salience 100
+    when
+        accumulate(
+            Champion(team == "enemy", role == Role.ASSASSIN),
+            $count : count(1)
+        )
+        eval($count >= 2)
+        not Fact(name == "enemyHasMultipleAssassins")
+    then
+        insert(new Fact("enemyHasMultipleAssassins"));
+end
+
+rule "Enemy has no tank"
+    salience 100
+    when
+        not Champion(team == "enemy", role == Role.TANK)
+        not Fact(name == "enemyHasNoTank")
+    then
+        insert(new Fact("enemyHasNoTank"));
+end
+
+rule "Enemy is squishy"
+    salience 95
+    when
+        Fact(name == "enemyHasNoTank")
+        accumulate(
+            Champion(team == "enemy", role == Role.ASSASSIN || role == Role.MAGE || role == Role.ADC),
+            $count : count(1)
+        )
+        eval($count >= 3)
+        not Fact(name == "enemyIsSquishy")
+    then
+        insert(new Fact("enemyIsSquishy"));
+end
+
+// ── STIL IGRE NEPRIJATELJA ────────────────────────────────────
+
+rule "Enemy has engage"
+    salience 100
+    when
+        Champion(team == "enemy", playStyle == PlayStyle.ENGAGE)
+        not Fact(name == "enemyHasEngage")
+    then
+        insert(new Fact("enemyHasEngage"));
+end
+
+rule "Enemy has heavy engage"
+    salience 100
+    when
+        accumulate(
+            Champion(team == "enemy", playStyle == PlayStyle.ENGAGE),
+            $count : count(1)
+        )
+        eval($count >= 2)
+        not Fact(name == "enemyHasHeavyEngage")
+    then
+        insert(new Fact("enemyHasHeavyEngage"));
+end
+
+rule "Enemy has poke"
+    salience 100
+    when
+        Champion(team == "enemy", playStyle == PlayStyle.POKE)
+        not Fact(name == "enemyHasPoke")
+    then
+        insert(new Fact("enemyHasPoke"));
+end
+
+rule "Enemy has burst"
+    salience 100
+    when
+        accumulate(
+            Champion(team == "enemy", playStyle == PlayStyle.BURST),
+            $count : count(1)
+        )
+        eval($count >= 2)
+        not Fact(name == "enemyHasBurst")
+    then
+        insert(new Fact("enemyHasBurst"));
+end
+
+rule "Enemy is poke heavy"
+    salience 100
+    when
+        accumulate(
+            Champion(team == "enemy", playStyle == PlayStyle.POKE),
+            $count : count(1)
+        )
+        eval($count >= 2)
+        not Fact(name == "enemyIsPokeHeavy")
+    then
+        insert(new Fact("enemyIsPokeHeavy"));
+end
+
+// ── SAVEZNICI ─────────────────────────────────────────────────
+
+rule "Ally needs tank"
+    salience 100
+    when
+        not Champion(team == "ally", role == Role.TANK)
+        not Fact(name == "allyNeedsTank")
+    then
+        insert(new Fact("allyNeedsTank"));
+end
+
+rule "Ally needs AP damage"
+    salience 100
+    when
+        not Champion(team == "ally", damageType == DamageType.AP)
+        not Fact(name == "allyNeedsAP")
+    then
+        insert(new Fact("allyNeedsAP"));
+end
+
+rule "Ally needs support"
+    salience 100
+    when
+        not Champion(team == "ally", role == Role.SUPPORT)
+        not Fact(name == "allyNeedsSupport")
+    then
+        insert(new Fact("allyNeedsSupport"));
+end
+
+rule "Ally lacks engage"
+    salience 100
+    when
+        not Champion(team == "ally", playStyle == PlayStyle.ENGAGE)
+        not Fact(name == "allyLacksEngage")
+    then
+        insert(new Fact("allyLacksEngage"));
+end
+
+rule "Ally has too much AD"
+    salience 100
+    when
+        accumulate(
+            Champion(team == "ally", damageType == DamageType.AD),
+            $count : count(1)
+        )
+        eval($count >= 4)
+        not Fact(name == "allyHasTooMuchAD")
+    then
+        insert(new Fact("allyHasTooMuchAD"));
+end
+
+rule "Ally lacks sustained damage"
+    salience 100
+    when
+        not Champion(team == "ally", playStyle == PlayStyle.SUSTAIN)
+        not Fact(name == "allyLacksSustain")
+    then
+        insert(new Fact("allyLacksSustain"));
+end
+
+rule "Ally lacks utility"
+    salience 100
+    when
+        not Champion(team == "ally", playStyle == PlayStyle.UTILITY)
+        not Fact(name == "allyLacksUtility")
+    then
+        insert(new Fact("allyLacksUtility"));
+end
+
+rule "Ally is all assassins"
+    salience 100
+    when
+        accumulate(
+            Champion(team == "ally"),
+            $total : count(1)
+        )
+        accumulate(
+            Champion(team == "ally", role == Role.ASSASSIN),
+            $assassins : count(1)
+        )
+        eval($total >= 2 && $assassins == $total)
+        not Fact(name == "allyIsAllAssassins")
+    then
+        insert(new Fact("allyIsAllAssassins"));
+end
+
+// ── SLOŽENI ZAKLJUČCI (kombinacije) ──────────────────────────
+
+rule "Enemy dive composition"
+    salience 90
+    when
+        Fact(name == "enemyHasAssassin")
+        Fact(name == "enemyHasEngage")
+        not Fact(name == "enemyIsDiveComposition")
+    then
+        insert(new Fact("enemyIsDiveComposition"));
+end
+
+rule "Enemy poke and engage"
+    salience 90
+    when
+        Fact(name == "enemyHasPoke")
+        Fact(name == "enemyHasEngage")
+        not Fact(name == "enemyHasPokeAndEngage")
+    then
+        insert(new Fact("enemyHasPokeAndEngage"));
+end
+
+rule "Enemy full burst"
+    salience 90
+    when
+        Fact(name == "enemyHasBurst")
+        Fact(name == "enemyHasAssassin")
+        not Fact(name == "enemyIsFullBurst")
+    then
+        insert(new Fact("enemyIsFullBurst"));
+end
+
+rule "Ally needs frontline and engage"
+    salience 90
+    when
+        Fact(name == "allyNeedsTank")
+        Fact(name == "allyLacksEngage")
+        not Fact(name == "allyNeedsFrontlineEngage")
+    then
+        insert(new Fact("allyNeedsFrontlineEngage"));
+end

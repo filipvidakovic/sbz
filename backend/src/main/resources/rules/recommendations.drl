@@ -1,0 +1,471 @@
+package com.lol.recommender.rules;
+
+import com.lol.recommender.model.Champion;
+import com.lol.recommender.model.Fact;
+import com.lol.recommender.model.Strategy;
+import com.lol.recommender.model.Recommendation;
+
+// ============================================================
+//  NIVO 3: PREPORUKE
+//  Strategy + Fact → konkretni champion
+//  Svaki champion ima jasno definisane uslove i razloge.
+//  "not Champion(team == 'ally', name == 'X')" sprečava
+//  preporuku championa koji je već u timu.
+// ============================================================
+
+// ════════════════════════════════════════════════════════════
+//  MALPHITE
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Malphite – perfect vs AD dive"
+    salience 60
+    when
+        Strategy(name == "pickFrontlineEngage")
+        Fact(name == "enemyMostlyAD")
+        not Champion(team == "ally", name == "Malphite")
+    then
+        Recommendation r = new Recommendation("Malphite", 97);
+        r.addReason("team critically needs both frontline AND engage");
+        r.addReason("Malphite R is one of the best engage abilities in the game");
+        r.addReason("passive armor scaling counters enemy AD damage");
+        insert(r);
+end
+
+rule "Recommend Malphite – tank vs AD assassins"
+    salience 58
+    when
+        Strategy(name == "pickTank")
+        Fact(name == "enemyHasAssassin")
+        Fact(name == "enemyMostlyAD")
+        not Champion(team == "ally", name == "Malphite")
+    then
+        Recommendation r = new Recommendation("Malphite", 93);
+        r.addReason("enemy AD assassins are countered by Malphite's armor");
+        r.addReason("team needs a tank");
+        insert(r);
+end
+
+rule "Recommend Malphite – engage into poke"
+    salience 55
+    when
+        Strategy(name == "hardEngageVsPoke")
+        not Champion(team == "ally", name == "Malphite")
+    then
+        Recommendation r = new Recommendation("Malphite", 88);
+        r.addReason("unstoppable R hard counters poke-and-engage enemy compositions");
+        r.addReason("can engage from long range to punish overextended pokers");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  ORNN
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Ornn – tank vs AP engage"
+    salience 60
+    when
+        Strategy(name == "pickFrontlineEngage")
+        Fact(name == "enemyMostlyAP")
+        not Champion(team == "ally", name == "Ornn")
+    then
+        Recommendation r = new Recommendation("Ornn", 95);
+        r.addReason("team needs frontline + engage vs AP composition");
+        r.addReason("Ornn naturally builds magic resistance items");
+        r.addReason("passive item upgrades benefit entire team late game");
+        insert(r);
+end
+
+rule "Recommend Ornn – durable tank vs balanced"
+    salience 55
+    when
+        Strategy(name == "pickTank")
+        Fact(name == "enemyBalancedDamage")
+        not Champion(team == "ally", name == "Ornn")
+    then
+        Recommendation r = new Recommendation("Ornn", 86);
+        r.addReason("mixed damage enemy requires a champion with both armor and MR");
+        r.addReason("Ornn builds both resistance types and brings team-wide engage");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  RAMMUS
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Rammus – hard counter multiple AD assassins"
+    salience 62
+    when
+        Fact(name == "enemyHasMultipleAssassins")
+        Fact(name == "enemyMostlyAD")
+        not Champion(team == "ally", name == "Rammus")
+    then
+        Recommendation r = new Recommendation("Rammus", 96);
+        r.addReason("multiple AD assassins – Rammus is a direct hard counter");
+        r.addReason("Thornmail passive deals damage back to attackers");
+        r.addReason("taunt forces enemies to attack the most armored champion");
+        insert(r);
+end
+
+rule "Recommend Rammus – vs full AD burst"
+    salience 58
+    when
+        Fact(name == "enemyIsFullBurst")
+        Fact(name == "enemyMostlyAD")
+        not Champion(team == "ally", name == "Rammus")
+    then
+        Recommendation r = new Recommendation("Rammus", 90);
+        r.addReason("full AD burst composition is negated by extreme armor stacking");
+        r.addReason("Rammus ult disrupts assassins before they can burst carries");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  LEONA
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Leona – engage support into squishy"
+    salience 58
+    when
+        Strategy(name == "pickEngageSupport")
+        Fact(name == "enemyIsSquishy")
+        not Champion(team == "ally", name == "Leona")
+    then
+        Recommendation r = new Recommendation("Leona", 91);
+        r.addReason("point-and-click CC chains lock down squishy targets instantly");
+        r.addReason("team needs engage support – Leona is the gold standard");
+        insert(r);
+end
+
+rule "Recommend Leona – counter poke with engage"
+    salience 56
+    when
+        Strategy(name == "counterPoke")
+        Strategy(name == "pickEngageSupport")
+        not Champion(team == "ally", name == "Leona")
+    then
+        Recommendation r = new Recommendation("Leona", 87);
+        r.addReason("diving on poke champions with Leona forces defensive play");
+        r.addReason("provides team with the hard engage needed to close distance");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  NAUTILUS
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Nautilus – peel vs assassins"
+    salience 57
+    when
+        Strategy(name == "pickPeelSupport")
+        Fact(name == "enemyHasAssassin")
+        not Champion(team == "ally", name == "Nautilus")
+    then
+        Recommendation r = new Recommendation("Nautilus", 89);
+        r.addReason("hook + ult creates multi-layer CC to peel assassin dives");
+        r.addReason("passive root on every ability makes him impossible to walk through");
+        insert(r);
+end
+
+rule "Recommend Nautilus – engage vs dive comp"
+    salience 56
+    when
+        Strategy(name == "pickEngageSupport")
+        Fact(name == "enemyIsDiveComposition")
+        not Champion(team == "ally", name == "Nautilus")
+    then
+        Recommendation r = new Recommendation("Nautilus", 85);
+        r.addReason("dive compositions can be countered by initiating first");
+        r.addReason("Nautilus hook + ult peels AND engages simultaneously");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  ALISTAR
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Alistar – disengage vs heavy engage"
+    salience 58
+    when
+        Strategy(name == "pickDisengage")
+        Strategy(name == "pickSupport")
+        not Champion(team == "ally", name == "Alistar")
+    then
+        Recommendation r = new Recommendation("Alistar", 88);
+        r.addReason("Alistar W+Q knocks back enemy engages and resets fights");
+        r.addReason("ult makes him nearly unkillable while providing protection for the carry");
+        insert(r);
+end
+
+rule "Recommend Alistar – peel vs full burst"
+    salience 57
+    when
+        Strategy(name == "pickPeelSupport")
+        Fact(name == "enemyIsFullBurst")
+        not Champion(team == "ally", name == "Alistar")
+    then
+        Recommendation r = new Recommendation("Alistar", 86);
+        r.addReason("Alistar ult reduces incoming damage by 75%, surviving burst combos");
+        r.addReason("headbutt interrupts and displaces assassins mid-combo");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  ORIANNA
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Orianna – AP with engage synergy"
+    salience 57
+    when
+        Strategy(name == "pickMage")
+        Strategy(name == "pickEngage")
+        not Champion(team == "ally", name == "Orianna")
+    then
+        Recommendation r = new Recommendation("Orianna", 90);
+        r.addReason("Orianna R is the strongest engage-synergy ultimate in the game");
+        r.addReason("ball mechanics provide zone control and shields for protection");
+        r.addReason("team needs AP damage alongside engage");
+        insert(r);
+end
+
+rule "Recommend Orianna – utility AP vs dive"
+    salience 55
+    when
+        Strategy(name == "pickMage")
+        Fact(name == "enemyIsDiveComposition")
+        not Champion(team == "ally", name == "Orianna")
+    then
+        Recommendation r = new Recommendation("Orianna", 84);
+        r.addReason("ball shield protects team from dive assassins");
+        r.addReason("R can disengage or counter-engage enemy dive");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  SYNDRA
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Syndra – burst mage vs squishy"
+    salience 57
+    when
+        Strategy(name == "pickMage")
+        Fact(name == "enemyIsSquishy")
+        not Champion(team == "ally", name == "Syndra")
+    then
+        Recommendation r = new Recommendation("Syndra", 89);
+        r.addReason("one-shot potential punishes squishy enemies with no tank");
+        r.addReason("E stun enables picks without needing team coordination");
+        insert(r);
+end
+
+rule "Recommend Syndra – poke mage into poke war"
+    salience 55
+    when
+        Strategy(name == "pickPokeMage")
+        Fact(name == "enemyHasPoke")
+        not Champion(team == "ally", name == "Syndra")
+    then
+        Recommendation r = new Recommendation("Syndra", 83);
+        r.addReason("long range allows winning poke trades against enemy pokers");
+        r.addReason("AP damage needed to split enemy resistances");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  VIKTOR
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Viktor – poke AP vs no tank"
+    salience 56
+    when
+        Strategy(name == "pickPokeMage")
+        Fact(name == "enemyHasNoTank")
+        not Champion(team == "ally", name == "Viktor")
+    then
+        Recommendation r = new Recommendation("Viktor", 85);
+        r.addReason("W zone control and Q poke chip down squishy enemies safely");
+        r.addReason("death ray range punishes enemies without frontline protection");
+        insert(r);
+end
+
+rule "Recommend Viktor – sustained AP vs engage"
+    salience 54
+    when
+        Strategy(name == "pickMage")
+        Fact(name == "enemyHasHeavyEngage")
+        not Champion(team == "ally", name == "Viktor")
+    then
+        Recommendation r = new Recommendation("Viktor", 80);
+        r.addReason("W slowing field punishes enemies who engage and get slowed");
+        r.addReason("can deal sustained damage from behind team during fights");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  LUX
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Lux – poke support vs poke enemy"
+    salience 55
+    when
+        Strategy(name == "pickSupport")
+        Fact(name == "enemyHasPoke")
+        not Strategy(name == "pickEngageSupport")
+        not Champion(team == "ally", name == "Lux")
+    then
+        Recommendation r = new Recommendation("Lux", 78);
+        r.addReason("long range lets her out-poke most enemy pokers safely");
+        r.addReason("E shield can negate incoming poke damage on carry");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  JANNA
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Janna – disengage support vs heavy engage"
+    salience 58
+    when
+        Strategy(name == "pickDisengage")
+        Strategy(name == "pickSupport")
+        not Strategy(name == "pickEngageSupport")
+        not Champion(team == "ally", name == "Janna")
+    then
+        Recommendation r = new Recommendation("Janna", 90);
+        r.addReason("R is the hardest disengage in the game, countering enemy engage");
+        r.addReason("tornado slows and knock up single targets diving the carry");
+        insert(r);
+end
+
+rule "Recommend Janna – protect vs dive composition"
+    salience 57
+    when
+        Strategy(name == "pickPeelSupport")
+        Fact(name == "enemyIsDiveComposition")
+        not Champion(team == "ally", name == "Janna")
+    then
+        Recommendation r = new Recommendation("Janna", 87);
+        r.addReason("passive movement speed lets her stay near carry at all times");
+        r.addReason("shield + heal sustains carry through assassination attempts");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  THRESH
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Thresh – utility support vs assassins"
+    salience 56
+    when
+        Strategy(name == "pickSupport")
+        Fact(name == "enemyHasAssassin")
+        not Fact(name == "enemyHasHeavyEngage")
+        not Champion(team == "ally", name == "Thresh")
+    then
+        Recommendation r = new Recommendation("Thresh", 82);
+        r.addReason("lantern provides instant escape route for carries threatened by assassins");
+        r.addReason("hook + flay combination interrupts assassin approach patterns");
+        insert(r);
+end
+
+rule "Recommend Thresh – all-round vs balanced enemy"
+    salience 54
+    when
+        Strategy(name == "pickSupport")
+        Fact(name == "enemyBalancedDamage")
+        not Champion(team == "ally", name == "Thresh")
+    then
+        Recommendation r = new Recommendation("Thresh", 79);
+        r.addReason("versatile kit adapts to any enemy composition");
+        r.addReason("can engage, peel, or disengage depending on how the fight develops");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  SORAKA
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Soraka – healing support vs sustained damage"
+    salience 55
+    when
+        Strategy(name == "pickSupport")
+        Fact(name == "enemyMostlyAD")
+        not Fact(name == "enemyHasAssassin")
+        not Champion(team == "ally", name == "Soraka")
+    then
+        Recommendation r = new Recommendation("Soraka", 75);
+        r.addReason("sustained healing negates chip damage from AD auto-attack compositions");
+        r.addReason("global R saves teammates across the map from burst damage");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  FIZZ
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Fizz – assassin vs squishy AP"
+    salience 57
+    when
+        Strategy(name == "pickAssassin")
+        Fact(name == "enemyMostlyAP")
+        not Champion(team == "ally", name == "Fizz")
+    then
+        Recommendation r = new Recommendation("Fizz", 86);
+        r.addReason("E makes him untargetable, dodging AP mage skill shots entirely");
+        r.addReason("one-shots AP carries who often have low armor");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  ZED
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Zed – assassin vs squishy AD"
+    salience 57
+    when
+        Strategy(name == "pickAssassin")
+        Fact(name == "enemyIsSquishy")
+        Fact(name == "enemyMostlyAD")
+        not Champion(team == "ally", name == "Zed")
+    then
+        Recommendation r = new Recommendation("Zed", 84);
+        r.addReason("death mark one-shots ADC and assassin targets with no tank to peel");
+        r.addReason("shadow mechanics make him nearly impossible to catch before burst");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  CASSIOPEIA
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Cassiopeia – sustained AP vs engage"
+    salience 55
+    when
+        Strategy(name == "pickMage")
+        Fact(name == "enemyHasEngage")
+        Fact(name == "allyLacksSustain")
+        not Champion(team == "ally", name == "Cassiopeia")
+    then
+        Recommendation r = new Recommendation("Cassiopeia", 82);
+        r.addReason("ult stops engaging enemies dead in their tracks");
+        r.addReason("sustained poison damage works well when enemies are grouped in fights");
+        r.addReason("team lacks sustained damage output");
+        insert(r);
+end
+
+// ════════════════════════════════════════════════════════════
+//  IRELIA
+// ════════════════════════════════════════════════════════════
+
+rule "Recommend Irelia – fighter vs squishy no-tank"
+    salience 56
+    when
+        Strategy(name == "pickAssassin")
+        Fact(name == "enemyIsSquishy")
+        Fact(name == "enemyHasNoTank")
+        not Champion(team == "ally", name == "Irelia")
+    then
+        Recommendation r = new Recommendation("Irelia", 83);
+        r.addReason("dashes through squishy composition uncontested");
+        r.addReason("resets on kills allow chain-kills across entire squishy team");
+        insert(r);
+end
