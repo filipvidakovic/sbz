@@ -1,0 +1,137 @@
+package com.lol.recommender.rules;
+
+import com.lol.recommender.model.Champion;
+import com.lol.recommender.model.Champion.Role;
+import com.lol.recommender.model.Champion.DamageType;
+import com.lol.recommender.model.Fact;
+import com.lol.recommender.model.Strategy;
+
+// ============================================================
+//  PARAMETRIZOVANA PRAVILA (zamena za template sistem)
+//
+//  Drools 9 ne podržava staru template sintaksu.
+//  Koristimo standardna pravila grupisana po tipu –
+//  svaka grupa pokriva sve vrednosti jednog parametra.
+// ============================================================
+
+// ── ALLY NEMA ODREĐENU ULOGU → STRATEGIJA ────────────────────
+
+rule "Template: Ally needs TANK role"
+    salience 80
+    when
+        not Champion(team == "ally", role == Role.TANK)
+        not Strategy(name == "pickTankRole")
+    then
+        insert(new Strategy("pickTankRole"));
+end
+
+rule "Template: Ally needs MAGE role"
+    salience 80
+    when
+        not Champion(team == "ally", role == Role.MAGE)
+        not Strategy(name == "pickMageRole")
+    then
+        insert(new Strategy("pickMageRole"));
+end
+
+rule "Template: Ally needs SUPPORT role"
+    salience 80
+    when
+        not Champion(team == "ally", role == Role.SUPPORT)
+        not Strategy(name == "pickSupportRole")
+    then
+        insert(new Strategy("pickSupportRole"));
+end
+
+rule "Template: Ally needs FIGHTER role"
+    salience 75
+    when
+        not Champion(team == "ally", role == Role.FIGHTER)
+        not Strategy(name == "pickFighterRole")
+    then
+        insert(new Strategy("pickFighterRole"));
+end
+
+rule "Template: Ally needs ADC role"
+    salience 75
+    when
+        not Champion(team == "ally", role == Role.ADC)
+        not Strategy(name == "pickADCRole")
+    then
+        insert(new Strategy("pickADCRole"));
+end
+
+// ── ENEMY DAMAGE THRESHOLD FACTS ─────────────────────────────
+
+rule "Template: Enemy 2+ AD"
+    salience 100
+    when
+        Number(intValue >= 2) from accumulate(
+            Champion(team == "enemy", damageType == DamageType.AD), count(1)
+        )
+        not Fact(name == "templateEnemyADHeavy")
+    then
+        insert(new Fact("templateEnemyADHeavy"));
+end
+
+rule "Template: Enemy 2+ AP"
+    salience 100
+    when
+        Number(intValue >= 2) from accumulate(
+            Champion(team == "enemy", damageType == DamageType.AP), count(1)
+        )
+        not Fact(name == "templateEnemyAPHeavy")
+    then
+        insert(new Fact("templateEnemyAPHeavy"));
+end
+
+rule "Template: Enemy 4+ AD dominant"
+    salience 100
+    when
+        Number(intValue >= 4) from accumulate(
+            Champion(team == "enemy", damageType == DamageType.AD), count(1)
+        )
+        not Fact(name == "templateEnemyADDominant")
+    then
+        insert(new Fact("templateEnemyADDominant"));
+end
+
+rule "Template: Enemy 4+ AP dominant"
+    salience 100
+    when
+        Number(intValue >= 4) from accumulate(
+            Champion(team == "enemy", damageType == DamageType.AP), count(1)
+        )
+        not Fact(name == "templateEnemyAPDominant")
+    then
+        insert(new Fact("templateEnemyAPDominant"));
+end
+
+// ── ALLY NEMA ODREĐENI TIP ŠTETE → STRATEGIJA ────────────────
+
+rule "Template: Ally missing AD damage"
+    salience 85
+    when
+        not Champion(team == "ally", damageType == DamageType.AD)
+        not Strategy(name == "addADDamage")
+    then
+        insert(new Strategy("addADDamage"));
+end
+
+rule "Template: Ally missing AP damage"
+    salience 85
+    when
+        not Champion(team == "ally", damageType == DamageType.AP)
+        not Strategy(name == "addAPDamage")
+    then
+        insert(new Strategy("addAPDamage"));
+end
+
+rule "Template: Ally missing Mixed damage"
+    salience 85
+    when
+        not Champion(team == "ally", damageType == DamageType.MIXED)
+        not Strategy(name == "addMixedDamage")
+    then
+        insert(new Strategy("addMixedDamage"));
+end

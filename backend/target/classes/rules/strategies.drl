@@ -3,12 +3,7 @@ package com.lol.recommender.rules;
 import com.lol.recommender.model.Fact;
 import com.lol.recommender.model.Strategy;
 
-// ============================================================
-//  NIVO 2: STRATEGIJE
-//  Forward chaining: Fact → Strategy
-// ============================================================
-
-// ── TANK / FRONTLINE ─────────────────────────────────────────
+// TANK / FRONTLINE
 
 rule "Need tank – enemy has assassin"
     salience 80
@@ -40,7 +35,7 @@ rule "Need tank – enemy dive comp"
         insert(new Strategy("pickTank"));
 end
 
-// ── ENGAGE ────────────────────────────────────────────────────
+// ENGAGE
 
 rule "Need engage – ally lacks engage"
     salience 80
@@ -69,7 +64,7 @@ rule "Counter heavy engage – disengage"
         insert(new Strategy("pickDisengage"));
 end
 
-// ── MAGE / AP ─────────────────────────────────────────────────
+// MAGE / AP
 
 rule "Need AP – ally lacks AP"
     salience 80
@@ -99,7 +94,7 @@ rule "Need AP poke – enemy is passive"
         insert(new Strategy("pickPokeMage"));
 end
 
-// ── SUPPORT ───────────────────────────────────────────────────
+// SUPPORT
 
 rule "Need support"
     salience 80
@@ -130,7 +125,7 @@ rule "Need engage support – ally lacks engage"
         insert(new Strategy("pickEngageSupport"));
 end
 
-// ── ASSASSIN / BURST ──────────────────────────────────────────
+// ASSASSIN / BURST
 
 rule "Pick assassin – enemy is squishy"
     salience 80
@@ -141,7 +136,7 @@ rule "Pick assassin – enemy is squishy"
         insert(new Strategy("pickAssassin"));
 end
 
-// ── KONTRA POKE ───────────────────────────────────────────────
+// KONTRA POKE
 
 rule "Counter poke – dive or engage"
     salience 80
@@ -161,7 +156,7 @@ rule "Counter poke with engage – force fights"
         insert(new Strategy("hardEngageVsPoke"));
 end
 
-// ── OTPORNOST (RESISTANCES) ───────────────────────────────────
+// OTPORNOST (RESISTANCES)
 
 rule "Build armor – enemy mostly AD"
     salience 80
@@ -190,7 +185,7 @@ rule "Build mixed resistances – balanced enemy"
         insert(new Strategy("buildMixedResistances"));
 end
 
-// ── UTILITY ───────────────────────────────────────────────────
+// UTILITY
 
 rule "Need utility – team lacks CC and mobility"
     salience 75

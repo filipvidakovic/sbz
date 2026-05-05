@@ -6,11 +6,7 @@ import com.lol.recommender.model.Champion.DamageType;
 import com.lol.recommender.model.Champion.PlayStyle;
 import com.lol.recommender.model.Fact;
 
-// ============================================================
-//  NIVO 1: ČINJENICE
-// ============================================================
-
-// ── TIP ŠTETE ────────────────────────────────────────────────
+// TIP STETE
 
 rule "Enemy mostly AD"
     salience 100
@@ -55,7 +51,7 @@ rule "Enemy balanced damage"
         insert(new Fact("enemyBalancedDamage"));
 end
 
-// ── ULOGE NEPRIJATELJA ────────────────────────────────────────
+// ULOGE NEPRIJATELJA
 
 rule "Enemy has assassin"
     salience 100
@@ -102,7 +98,7 @@ rule "Enemy is squishy"
         insert(new Fact("enemyIsSquishy"));
 end
 
-// ── STIL IGRE NEPRIJATELJA ────────────────────────────────────
+// STIL IGRE NEPRIJATELJA
 
 rule "Enemy has engage"
     salience 100
@@ -161,7 +157,7 @@ rule "Enemy is poke heavy"
         insert(new Fact("enemyIsPokeHeavy"));
 end
 
-// ── SAVEZNICI ─────────────────────────────────────────────────
+// SAVEZNICI
 
 rule "Ally needs tank"
     salience 100

@@ -14,16 +14,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RecommendationRequest {
-
-    /**
-     * Nazivi championa u savezničkom timu (već izabrani).
-     * Npr: ["Garen", "Ashe"]
-     */
     private List<String> allyChampions;
-
-    /**
-     * Nazivi championa u neprijateljskom timu.
-     * Npr: ["Zed", "Talon", "Caitlyn"]
-     */
     private List<String> enemyChampions;
+    private List<String> orderedEnemyPicks;
+    private Long simulatedPickIntervalMs;
 }

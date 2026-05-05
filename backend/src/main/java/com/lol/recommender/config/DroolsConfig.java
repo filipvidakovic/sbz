@@ -2,17 +2,25 @@ package com.lol.recommender.config;
 
 import org.kie.api.KieServices;
 import org.kie.api.builder.*;
+import org.kie.api.builder.model.KieModuleModel;
+import org.kie.api.conf.EventProcessingOption;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
+import org.kie.api.runtime.KieSessionConfiguration;
+import org.kie.api.runtime.conf.ClockTypeOption;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
 /**
- * Konfiguriše Drools KieContainer koji učitava .drl fajlove iz resources/rules/.
+ * Drools konfiguracija sa STREAM event processing modom.
  *
- * Koristimo programmatic API umesto kmodule.xml da bismo imali
- * jasnu kontrolu nad učitavanjem pravila u Spring kontekstu.
+ * STREAM mod (Fusion) je neophodan za:
+ *   - temporalne operatore (after, before, window:time)
+ *   - @Role(EVENT) anotacije na PickEvent klasi
+ *   - sliding time windows za CEP analizu
+ *
+ * KieSession koristi PSEUDO clock za simulaciju draft tempa.
  */
 @Configuration
 public class DroolsConfig {
@@ -21,45 +29,51 @@ public class DroolsConfig {
 
     @Bean
     public KieContainer kieContainer() {
-        KieServices kieServices = KieServices.Factory.get();
+        KieServices ks = KieServices.Factory.get();
+        KieFileSystem kfs = ks.newKieFileSystem();
 
-        KieFileSystem kieFileSystem = kieServices.newKieFileSystem();
-
-        // Učitaj sve .drl fajlove iz resources/rules/
         for (String drl : new String[]{
                 "facts.drl",
                 "strategies.drl",
-                "recommendations.drl"
+                "recommendations.drl",
+                "cep.drl",
+                "templates.drl",
+                "backward_chaining.drl"
         }) {
-            kieFileSystem.write(
-                kieServices.getResources()
-                    .newClassPathResource(RULES_PATH + drl)
-            );
+            kfs.write(ks.getResources().newClassPathResource(RULES_PATH + drl));
         }
 
-        KieBuilder kieBuilder = kieServices.newKieBuilder(kieFileSystem);
-        kieBuilder.buildAll();
+        // STREAM mod aktivira Drools Fusion (CEP)
+        KieModuleModel kieModuleModel = ks.newKieModuleModel();
+        kieModuleModel.newKieBaseModel("defaultKieBase")
+                .setEventProcessingMode(EventProcessingOption.STREAM)
+                .newKieSessionModel("defaultKieSession");
 
-        Results results = kieBuilder.getResults();
+        kfs.writeKModuleXML(kieModuleModel.toXML());
+
+        KieBuilder kb = ks.newKieBuilder(kfs);
+        kb.buildAll();
+
+        Results results = kb.getResults();
         if (results.hasMessages(Message.Level.ERROR)) {
-            throw new IllegalStateException(
-                "Greška pri kompajliranju Drools pravila:\n" +
-                results.getMessages(Message.Level.ERROR).toString()
-            );
+            results.getMessages(Message.Level.ERROR)
+                    .forEach(m -> System.err.println("DRL ERROR: " + m.getText() + " | File: " + m.getPath() + " | Line: " + m.getLine()));
+            throw new IllegalStateException("Rules compilation failed");
         }
 
-        return kieServices.newKieContainer(
-            kieServices.getRepository().getDefaultReleaseId()
-        );
+        return ks.newKieContainer(ks.getRepository().getDefaultReleaseId());
     }
 
     /**
-     * Vraća novu KieSession za svaki poziv – session se ne deli između zahteva!
-     * Scope je prototype jer KieSession nije thread-safe.
+     * PSEUDO clock – kontrolišemo vreme ručno da simuliramo
+     * draft tempo bez čekanja stvarnog vremena.
      */
     @Bean
     @Scope("prototype")
     public KieSession kieSession(KieContainer kieContainer) {
-        return kieContainer.newKieSession();
+        KieServices ks = KieServices.Factory.get();
+        KieSessionConfiguration config = ks.newKieSessionConfiguration();
+        config.setOption(ClockTypeOption.get("pseudo"));
+        return kieContainer.newKieSession("defaultKieSession", config);
     }
 }

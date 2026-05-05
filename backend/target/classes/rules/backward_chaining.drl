@@ -1,0 +1,148 @@
+package com.lol.recommender.rules;
+
+import com.lol.recommender.model.Champion;
+import com.lol.recommender.model.Champion.Role;
+import com.lol.recommender.model.Champion.DamageType;
+import com.lol.recommender.model.Champion.PlayStyle;
+import com.lol.recommender.model.Fact;
+import com.lol.recommender.model.Strategy;
+import com.lol.recommender.model.BCResult;
+import com.lol.recommender.model.BackwardChainingGoal;
+
+// ============================================================
+//  BACKWARD CHAINING
+//
+//  Drools 9 BC radi kroz rekurzivne query-je.
+//  Query sa parametrima se poziva iz Java koda ili iz
+//  drugih pravila. Engine sam rešava zavisnosti unazad.
+//
+//  Stablo:
+//  isGoodPick(championName)
+//  ├── query: fillsMissingRole     → ally nema tu ulogu?
+//  ├── query: countersEnemyDamage  → kontrira enemy damage?
+//  └── query: fulfillsStrategy     → ispunjava aktivnu strategiju?
+// ============================================================
+
+// ── QUERY DEFINICIJE ─────────────────────────────────────────
+
+// Da li ally timu nedostaje određena uloga?
+query allyNeedsRole(Role $role)
+    not Champion(team == "ally", role == $role)
+end
+
+// Da li enemy ima dominantan tip štete (2+)?
+query enemyDominantDamage(DamageType $type)
+    Number(intValue >= 2) from accumulate(
+        Champion(team == "enemy", damageType == $type),
+        count(1)
+    )
+end
+
+// Da li postoji aktivna strategija u WM?
+query hasActiveStrategy(String $stratName)
+    Strategy(name == $stratName)
+end
+
+// Da li candidate champion ispunjava nedostajuću ulogu?
+query fillsMissingRole(String $championName, Role $role)
+    allyNeedsRole($role;)
+    Champion(name == $championName, role == $role, team == "candidate")
+end
+
+// Da li candidate kontrira enemy damage type?
+query countersEnemyDamage(String $championName)
+    Champion($cName : name, $role : role, $dmg : damageType, team == "candidate")
+    eval($cName.equals($championName))
+    enemyDominantDamage($enemyDmg;)
+    eval(
+        $role == Role.TANK ||
+        ($dmg == DamageType.AD && $enemyDmg == DamageType.AP) ||
+        ($dmg == DamageType.AP && $enemyDmg == DamageType.AD)
+    )
+end
+
+// Da li candidate ispunjava aktivnu strategiju?
+query fulfillsStrategy(String $championName, String $stratName)
+    hasActiveStrategy($stratName;)
+    Champion($cName : name, $role : role, $style : playStyle, team == "candidate")
+    eval($cName.equals($championName))
+    eval(
+        ($stratName.equals("pickTank")         && $role == Role.TANK)      ||
+        ($stratName.equals("pickTankRole")     && $role == Role.TANK)      ||
+        ($stratName.equals("pickMage")         && $role == Role.MAGE)      ||
+        ($stratName.equals("pickMageRole")     && $role == Role.MAGE)      ||
+        ($stratName.equals("pickSupport")      && $role == Role.SUPPORT)   ||
+        ($stratName.equals("pickSupportRole")  && $role == Role.SUPPORT)   ||
+        ($stratName.equals("pickEngage")       && $style == PlayStyle.ENGAGE) ||
+        ($stratName.equals("pickAssassin")     && $role == Role.ASSASSIN)  ||
+        ($stratName.equals("addAPDamage")      && $role == Role.MAGE)      ||
+        ($stratName.equals("addADDamage")      && $role == Role.ADC)
+    )
+end
+
+// ── BC EVALUACIJA PRAVILA ─────────────────────────────────────
+
+// Slučaj 0: Champion već u timu → odmah invalid
+rule "BC: Already picked"
+    salience 200
+    when
+        BackwardChainingGoal($cName : championName)
+        Champion(team == "ally", name == $cName)
+        not BCResult(championName == $cName)
+    then
+        insert(new BCResult($cName, false,
+            java.util.List.of("Champion is already in ally team")));
+end
+
+// Slučaj 1: Popunjava missing ulogu
+rule "BC: Fills missing role"
+    salience 120
+    when
+        BackwardChainingGoal($cName : championName)
+        not Champion(team == "ally", name == $cName)
+        not BCResult(championName == $cName)
+        fillsMissingRole($cName, $role;)
+    then
+        java.util.List<String> reasons = new java.util.ArrayList<>();
+        reasons.add("Fills missing " + $role + " role in ally team");
+        insert(new BCResult($cName, true, reasons));
+end
+
+// Slučaj 2: Kontrira enemy damage
+rule "BC: Counters enemy damage"
+    salience 120
+    when
+        BackwardChainingGoal($cName : championName)
+        not Champion(team == "ally", name == $cName)
+        not BCResult(championName == $cName)
+        countersEnemyDamage($cName;)
+    then
+        java.util.List<String> reasons = new java.util.ArrayList<>();
+        reasons.add("Counters enemy's dominant damage type effectively");
+        insert(new BCResult($cName, true, reasons));
+end
+
+// Slučaj 3: Ispunjava aktivnu strategiju
+rule "BC: Fulfills active strategy"
+    salience 120
+    when
+        BackwardChainingGoal($cName : championName)
+        not Champion(team == "ally", name == $cName)
+        not BCResult(championName == $cName)
+        fulfillsStrategy($cName, $stratName;)
+    then
+        java.util.List<String> reasons = new java.util.ArrayList<>();
+        reasons.add("Fulfills active team strategy: " + $stratName);
+        insert(new BCResult($cName, true, reasons));
+end
+
+// Slučaj 4: Nijedan uslov nije ispunjen
+rule "BC: No valid reason"
+    salience 50
+    when
+        BackwardChainingGoal($cName : championName)
+        not BCResult(championName == $cName)
+    then
+        insert(new BCResult($cName, false,
+            java.util.List.of("No strategic reason to pick this champion in current draft")));
+end

@@ -1,0 +1,209 @@
+package com.lol.recommender.rules;
+
+import com.lol.recommender.model.PickEvent;
+import com.lol.recommender.model.DraftTrend;
+import com.lol.recommender.model.DraftTrend.TrendType;
+import com.lol.recommender.model.Champion.Role;
+import com.lol.recommender.model.Champion.PlayStyle;
+import com.lol.recommender.model.Champion.DamageType;
+import com.lol.recommender.model.Fact;
+
+// ============================================================
+//  CEP PRAVILA – Drools Fusion (STREAM mode)
+//
+//  Svaki PickEvent ima timestamp (pickedAt).
+//  Koristimo:
+//    - window:time(N s)   → svi eventi unutar N sekundi
+//    - window:length(N)   → poslednjih N događaja
+//    - after / before     → temporalni operatori
+//    - accumulate         → brojanje događaja u prozoru
+//
+//  Pseudo clock u servisu napreduje za simulatedPickIntervalMs
+//  između svakog inserta, pa "30s prozor" odgovara
+//  ~3 picka ako je interval 10s.
+// ============================================================
+
+// ── AGRESIVNI ASSASSIN DRAFT ─────────────────────────────────
+// Enemy pickuje 2+ assassina unutar 30 sekundi → želi brze killove
+
+rule "CEP: Aggressive assassin draft"
+    salience 110
+    when
+        accumulate(
+            $e : PickEvent(
+                team == "enemy",
+                role == Role.ASSASSIN
+            ) over window:time(30s),
+            $count : count($e)
+        )
+        eval($count >= 2)
+        not DraftTrend(trendType == TrendType.AGGRESSIVE_ASSASSIN_DRAFT)
+    then
+        double strength = Math.min(1.0, $count / 3.0);
+        insert(new DraftTrend(
+            TrendType.AGGRESSIVE_ASSASSIN_DRAFT,
+            "enemy",
+            strength,
+            "Enemy picked " + $count + " assassins rapidly – heavy burst dive incoming"
+        ));
+        // Pojačaj postojeću činjenicu ako već postoji, ili dodaj novu
+        insert(new Fact("cepEnemyAssassinTrend"));
+end
+
+// ── BURST DRAFTING TEMPO ─────────────────────────────────────
+// Enemy bira 3+ championa unutar 20 sekundi → brz draft = jaka strategija
+
+rule "CEP: Enemy burst drafting tempo"
+    salience 110
+    when
+        accumulate(
+            $e : PickEvent(team == "enemy") over window:time(20s),
+            $count : count($e)
+        )
+        eval($count >= 3)
+        not DraftTrend(trendType == TrendType.BURST_DRAFTING)
+    then
+        insert(new DraftTrend(
+            TrendType.BURST_DRAFTING,
+            "enemy",
+            0.8,
+            "Enemy drafted 3+ champions in under 20 seconds – confident, pre-planned composition"
+        ));
+        insert(new Fact("cepEnemyBurstDrafting"));
+end
+
+// ── TANK SPAM SEKVENCA ────────────────────────────────────────
+// 3 uzastopna picka su tankovi (po pickOrder, ne vremenu)
+
+rule "CEP: Tank spam sequence"
+    salience 110
+    when
+        $p1 : PickEvent(team == "enemy", role == Role.TANK, $o1 : pickOrder)
+        $p2 : PickEvent(team == "enemy", role == Role.TANK, pickOrder == $o1 + 1)
+        $p3 : PickEvent(team == "enemy", role == Role.TANK, pickOrder == $o1 + 2)
+        not DraftTrend(trendType == TrendType.TANK_SPAM)
+    then
+        insert(new DraftTrend(
+            TrendType.TANK_SPAM,
+            "enemy",
+            0.9,
+            "Enemy picked 3 consecutive tanks – unkillable frontline composition"
+        ));
+        insert(new Fact("cepEnemyTankSpam"));
+end
+
+// ── AP BURST TREND ────────────────────────────────────────────
+// 2+ AP burst championa unutar 25 sekundi
+
+rule "CEP: AP burst trend"
+    salience 110
+    when
+        accumulate(
+            $e : PickEvent(
+                team == "enemy",
+                damageType == DamageType.AP,
+                playStyle == PlayStyle.BURST
+            ) over window:time(25s),
+            $count : count($e)
+        )
+        eval($count >= 2)
+        not DraftTrend(trendType == TrendType.AP_BURST_TREND)
+    then
+        insert(new DraftTrend(
+            TrendType.AP_BURST_TREND,
+            "enemy",
+            Math.min(1.0, $count / 3.0),
+            "Enemy stacking AP burst – one-shot composition taking shape"
+        ));
+        insert(new Fact("cepEnemyAPBurstTrend"));
+end
+
+// ── AD HEAVY TREND ────────────────────────────────────────────
+// 3+ AD picka unutar 40 sekundi
+
+rule "CEP: AD heavy trend"
+    salience 110
+    when
+        accumulate(
+            $e : PickEvent(
+                team == "enemy",
+                damageType == DamageType.AD
+            ) over window:time(40s),
+            $count : count($e)
+        )
+        eval($count >= 3)
+        not DraftTrend(trendType == TrendType.AD_HEAVY_TREND)
+    then
+        insert(new DraftTrend(
+            TrendType.AD_HEAVY_TREND,
+            "enemy",
+            Math.min(1.0, $count / 4.0),
+            "Enemy committing to heavy AD – armor stacking will be essential"
+        ));
+        insert(new Fact("cepEnemyADHeavyTrend"));
+end
+
+// ── ENGAGE CHAIN ──────────────────────────────────────────────
+// 2+ engage championa zaredom (po pickOrder)
+
+rule "CEP: Engage chain sequence"
+    salience 110
+    when
+        $p1 : PickEvent(team == "enemy", playStyle == PlayStyle.ENGAGE, $o1 : pickOrder)
+        $p2 : PickEvent(team == "enemy", playStyle == PlayStyle.ENGAGE, pickOrder == $o1 + 1)
+        not DraftTrend(trendType == TrendType.ENGAGE_CHAIN)
+    then
+        insert(new DraftTrend(
+            TrendType.ENGAGE_CHAIN,
+            "enemy",
+            0.85,
+            "Enemy picked back-to-back engage champions – multi-layer initiation planned"
+        ));
+        insert(new Fact("cepEnemyEngageChain"));
+end
+
+// ── BALANCED DRAFT ────────────────────────────────────────────
+// Poslednja 4 enemy picka imaju različite uloge (nema obrasca)
+
+rule "CEP: Balanced draft detected"
+    salience 105
+    when
+        accumulate(
+            $e : PickEvent(team == "enemy") over window:length(4),
+            $roles : collectSet($e.getRole()),
+            $count : count($e)
+        )
+        eval($count == 4 && $roles.size() >= 3)
+        not DraftTrend(trendType == TrendType.BALANCED_DRAFT)
+        not DraftTrend(team == "enemy")  // nema jačeg trenda
+    then
+        insert(new DraftTrend(
+            TrendType.BALANCED_DRAFT,
+            "enemy",
+            0.5,
+            "Enemy draft shows no clear pattern – flexible, adaptable composition"
+        ));
+end
+
+// ── CEP TREND → FACT ESKALACIJA ──────────────────────────────
+// Pojačava postojeće činjenice na osnovu CEP trenda
+
+rule "CEP: Escalate assassin threat from trend"
+    salience 95
+    when
+        DraftTrend(trendType == TrendType.AGGRESSIVE_ASSASSIN_DRAFT, $strength : strength)
+        eval($strength >= 0.6)
+        not Fact(name == "cepEscalatedAssassinThreat")
+    then
+        insert(new Fact("cepEscalatedAssassinThreat"));
+end
+
+rule "CEP: Escalate AP threat from trend"
+    salience 95
+    when
+        DraftTrend(trendType == TrendType.AP_BURST_TREND, $strength : strength)
+        eval($strength >= 0.6)
+        not Fact(name == "cepEscalatedAPThreat")
+    then
+        insert(new Fact("cepEscalatedAPThreat"));
+end

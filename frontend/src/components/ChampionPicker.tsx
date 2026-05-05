@@ -13,10 +13,25 @@ export function ChampionPicker({ champions, selected, onSelect, placeholder = 'P
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
 
   const available = champions.filter(
     c => !excluded.includes(c) && c.toLowerCase().includes(search.toLowerCase())
   );
+  const handleOpen = () => {
+  if (triggerRef.current) {
+    const rect = triggerRef.current.getBoundingClientRect();
+    setDropdownStyle({
+      position: 'fixed',
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+      zIndex: 9999,
+    });
+  }
+  setOpen(o => !o);
+};
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -30,10 +45,10 @@ export function ChampionPicker({ champions, selected, onSelect, placeholder = 'P
   }, []);
 
   return (
-    <div className={styles.wrapper} ref={ref}>
+    <div className={styles.wrapper} ref={triggerRef}>
       <button
         className={`${styles.trigger} ${selected ? styles.filled : ''}`}
-        onClick={() => setOpen(o => !o)}
+        onClick={handleOpen}
       >
         {selected ? (
           <>

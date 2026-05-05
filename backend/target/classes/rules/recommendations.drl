@@ -5,17 +5,7 @@ import com.lol.recommender.model.Fact;
 import com.lol.recommender.model.Strategy;
 import com.lol.recommender.model.Recommendation;
 
-// ============================================================
-//  NIVO 3: PREPORUKE
-//  Strategy + Fact → konkretni champion
-//  Svaki champion ima jasno definisane uslove i razloge.
-//  "not Champion(team == 'ally', name == 'X')" sprečava
-//  preporuku championa koji je već u timu.
-// ============================================================
-
-// ════════════════════════════════════════════════════════════
 //  MALPHITE
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Malphite – perfect vs AD dive"
     salience 60
@@ -57,9 +47,7 @@ rule "Recommend Malphite – engage into poke"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  ORNN
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Ornn – tank vs AP engage"
     salience 60
@@ -88,9 +76,7 @@ rule "Recommend Ornn – durable tank vs balanced"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  RAMMUS
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Rammus – hard counter multiple AD assassins"
     salience 62
@@ -119,9 +105,7 @@ rule "Recommend Rammus – vs full AD burst"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  LEONA
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Leona – engage support into squishy"
     salience 58
@@ -149,9 +133,7 @@ rule "Recommend Leona – counter poke with engage"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  NAUTILUS
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Nautilus – peel vs assassins"
     salience 57
@@ -179,9 +161,7 @@ rule "Recommend Nautilus – engage vs dive comp"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  ALISTAR
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Alistar – disengage vs heavy engage"
     salience 58
@@ -209,9 +189,7 @@ rule "Recommend Alistar – peel vs full burst"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  ORIANNA
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Orianna – AP with engage synergy"
     salience 57
@@ -240,9 +218,7 @@ rule "Recommend Orianna – utility AP vs dive"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  SYNDRA
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Syndra – burst mage vs squishy"
     salience 57
@@ -270,9 +246,7 @@ rule "Recommend Syndra – poke mage into poke war"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  VIKTOR
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Viktor – poke AP vs no tank"
     salience 56
@@ -300,9 +274,7 @@ rule "Recommend Viktor – sustained AP vs engage"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  LUX
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Lux – poke support vs poke enemy"
     salience 55
@@ -318,9 +290,7 @@ rule "Recommend Lux – poke support vs poke enemy"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  JANNA
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Janna – disengage support vs heavy engage"
     salience 58
@@ -349,9 +319,7 @@ rule "Recommend Janna – protect vs dive composition"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  THRESH
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Thresh – utility support vs assassins"
     salience 56
@@ -380,9 +348,7 @@ rule "Recommend Thresh – all-round vs balanced enemy"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  SORAKA
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Soraka – healing support vs sustained damage"
     salience 55
@@ -398,9 +364,7 @@ rule "Recommend Soraka – healing support vs sustained damage"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  FIZZ
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Fizz – assassin vs squishy AP"
     salience 57
@@ -415,9 +379,7 @@ rule "Recommend Fizz – assassin vs squishy AP"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  ZED
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Zed – assassin vs squishy AD"
     salience 57
@@ -433,9 +395,7 @@ rule "Recommend Zed – assassin vs squishy AD"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  CASSIOPEIA
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Cassiopeia – sustained AP vs engage"
     salience 55
@@ -452,9 +412,7 @@ rule "Recommend Cassiopeia – sustained AP vs engage"
         insert(r);
 end
 
-// ════════════════════════════════════════════════════════════
 //  IRELIA
-// ════════════════════════════════════════════════════════════
 
 rule "Recommend Irelia – fighter vs squishy no-tank"
     salience 56
