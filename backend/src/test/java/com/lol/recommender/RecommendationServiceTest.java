@@ -3,6 +3,7 @@ package com.lol.recommender;
 import com.lol.recommender.config.ChampionRegistry;
 import com.lol.recommender.model.Recommendation;
 import com.lol.recommender.model.RecommendationRequest;
+import com.lol.recommender.model.RecommendationResponse;
 import com.lol.recommender.service.RecommendationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,13 +29,15 @@ class RecommendationServiceTest {
     void testClassicADComposition() {
         RecommendationRequest req = new RecommendationRequest(
             List.of("Garen", "Ashe"),
-            List.of("Zed", "Talon", "Caitlyn")
+            List.of("Zed", "Talon", "Caitlyn"),
+            List.of("Zed", "Talon", "Caitlyn"),
+            8L
         );
 
-        List<Recommendation> result = service.recommend(req);
+        RecommendationResponse result = service.recommend(req);
 
-        assertThat(result).isNotEmpty();
-        List<String> names = result.stream()
+        assertThat(result.getRecommendations()).isNotEmpty();
+        List<String> names = result.getRecommendations().stream()
                 .map(Recommendation::getChampionName)
                 .toList();
         System.out.println("Preporuke: " + names);
@@ -52,11 +55,13 @@ class RecommendationServiceTest {
     void testAPComposition() {
         RecommendationRequest req = new RecommendationRequest(
             List.of("Garen", "Ashe"),
-            List.of("Syndra", "Orianna", "Katarina")
+            List.of("Syndra", "Orianna", "Katarina"),
+            List.of("Syndra", "Orianna", "Katarina"),
+            8L
         );
 
-        List<Recommendation> result = service.recommend(req);
-        List<String> names = result.stream().map(Recommendation::getChampionName).toList();
+        RecommendationResponse result = service.recommend(req);
+        List<String> names = result.getRecommendations().stream().map(Recommendation::getChampionName).toList();
         System.out.println("Preporuke vs AP: " + names);
 
         assertThat(names).contains("Ornn");
@@ -69,11 +74,13 @@ class RecommendationServiceTest {
     void testAllyAlreadyHasTank() {
         RecommendationRequest req = new RecommendationRequest(
             List.of("Malphite", "Ashe"),
-            List.of("Zed", "Talon", "Caitlyn")
+            List.of("Zed", "Talon", "Caitlyn"),
+            List.of("Zed", "Talon", "Caitlyn"),
+            8L
         );
 
-        List<Recommendation> result = service.recommend(req);
-        List<String> names = result.stream().map(Recommendation::getChampionName).toList();
+        RecommendationResponse result = service.recommend(req);
+        List<String> names = result.getRecommendations().stream().map(Recommendation::getChampionName).toList();
         System.out.println("Preporuke kad ima tank: " + names);
 
         assertThat(names).doesNotContain("Malphite");
